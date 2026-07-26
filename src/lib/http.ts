@@ -1,6 +1,7 @@
 const DEFAULT_TIMEOUT_MS = 15_000;
 
-const USER_AGENT = "art-mcp/0.1 (+https://github.com/; MCP server)";
+const USER_AGENT =
+  "art-mcp/0.1 (+https://github.com/puf3zin/art-mcp; MCP server)";
 
 export class HttpError extends Error {
   constructor(
