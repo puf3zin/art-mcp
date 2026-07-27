@@ -6,12 +6,13 @@ import { fetchImage } from "./lib/image.js";
 import { availableProviders, getProvider, providers } from "./providers/index.js";
 import type { Artwork } from "./types.js";
 import { SOURCES } from "./types.js";
+import { VERSION } from "./version.js";
 
 const sourceEnum = z.enum(SOURCES);
 
 const server = new McpServer({
   name: "art-mcp",
-  version: "0.1.0",
+  version: VERSION,
 });
 
 function textResult(data: unknown) {

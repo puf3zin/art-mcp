@@ -1,7 +1,9 @@
+import { VERSION } from "../version.js";
+
 const DEFAULT_TIMEOUT_MS = 15_000;
 
-const USER_AGENT =
-  "art-mcp/0.2 (+https://github.com/puf3zin/art-mcp; MCP server)";
+// Sent on every museum request, so it should say which version is calling.
+const USER_AGENT = `art-mcp/${VERSION} (+https://github.com/puf3zin/art-mcp; MCP server)`;
 
 export class HttpError extends Error {
   constructor(

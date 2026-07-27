@@ -1,6 +1,6 @@
 {
   "name": "art-mcp",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "MCP server for searching museum collections and viewing artwork images and metadata.",
   "type": "module",
   "bin": {
