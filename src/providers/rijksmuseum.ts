@@ -1,3 +1,5 @@
+import { mapLimit } from "../lib/concurrency.js";
+import { FULL_WIDTH, THUMB_WIDTH, iiifAtWidth } from "../lib/iiif.js";
 import { getJson } from "../lib/http.js";
 import type { Artwork, ArtworkDetail, Provider } from "../types.js";
 
@@ -207,12 +209,6 @@ async function resolveImage(o: LinkedArtObject): Promise<string | undefined> {
   }
 }
 
-/** Rewrite a IIIF `full/max` URL to a bounded width; originals run to ~5 MB. */
-function iiifAtWidth(url: string | undefined, width: number): string | undefined {
-  if (!url) return undefined;
-  return url.replace(/\/full\/(max|full)\//, `/full/${width},/`);
-}
-
 // --- Fetching ----------------------------------------------------------------
 
 async function fetchObject(id: string): Promise<LinkedArtObject> {
@@ -226,29 +222,10 @@ function toCompact(o: LinkedArtObject, id: string, imageUrl?: string): Artwork {
     title: titleOf(o),
     artist: artistOf(o),
     date: dateOf(o),
-    imageUrl: iiifAtWidth(imageUrl, 843),
-    thumbnailUrl: iiifAtWidth(imageUrl, 200),
+    imageUrl: iiifAtWidth(imageUrl, FULL_WIDTH),
+    thumbnailUrl: iiifAtWidth(imageUrl, THUMB_WIDTH),
     museumUrl: museumUrlOf(o),
   };
-}
-
-/** Run `worker` over `items` with a cap on in-flight requests. */
-async function mapLimit<T, R>(
-  items: T[],
-  limit: number,
-  worker: (item: T) => Promise<R>,
-): Promise<R[]> {
-  const results: R[] = new Array(items.length);
-  let next = 0;
-  const runners = Array.from({ length: Math.min(limit, items.length) }, async () => {
-    while (true) {
-      const i = next++;
-      if (i >= items.length) return;
-      results[i] = await worker(items[i]);
-    }
-  });
-  await Promise.all(runners);
-  return results;
 }
 
 export const rijksmuseumProvider: Provider = {

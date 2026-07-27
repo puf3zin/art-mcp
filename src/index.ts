@@ -4,10 +4,10 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import { z } from "zod";
 import { fetchImage } from "./lib/image.js";
 import { availableProviders, getProvider, providers } from "./providers/index.js";
-import type { Artwork, Source } from "./types.js";
+import type { Artwork } from "./types.js";
 import { SOURCES } from "./types.js";
 
-const sourceEnum = z.enum(SOURCES as [Source, ...Source[]]);
+const sourceEnum = z.enum(SOURCES);
 
 const server = new McpServer({
   name: "art-mcp",
@@ -57,7 +57,18 @@ server.registerTool(
       "Search museum collections for artworks. Returns compact results including a `source` and `id` used with get_artwork or get_artwork_image.\n\n" +
       "IMPORTANT — this matches keywords against catalog metadata; it is not semantic search. Artist names, titles, cultures, and periods work well. Descriptions of subject matter work badly: a query like 'man crossing a bridge' matches any record containing 'man', 'bridge', or names like 'Bridges' and 'Cross', and buries the relevant results.\n\n" +
       "So translate the user's intent into catalog vocabulary before calling. If you can name a likely artist, school, or title from your own knowledge, search for that instead — e.g. prefer 'Hokusai' or 'Hiroshige Tokaido' over 'japanese painting of a bridge'. Searching a subject phrase directly is a last resort; if you must, use one or two distinctive nouns rather than a sentence.\n\n" +
-      "Results are ordered by each museum's own relevance ranking, which is often weak — scan the whole list rather than assuming the first hit is best.",
+      "Results are ordered by each museum's own relevance ranking, which is often weak — scan the whole list rather than assuming the first hit is best.\n\n" +
+      "CHOOSING A SOURCE. 'all' is a fine default, but naming a source is much better when the work has an obvious home. Five of the ten sources hold mostly Western art (met, artic, cleveland, harvard, rijksmuseum); for anything else, reach for these first:\n" +
+      "- Japanese art and objects → 'japansearch' (Japan's national aggregator), then 'vam', 'met'\n" +
+      "- Chinese, Korean, South and Southeast Asian, Islamic → 'vam', then 'smithsonian'\n" +
+      "- African art → 'smithsonian' with `unit_code:NMAfA` in the query, then 'vam'\n" +
+      "- Indigenous Americas and pre-Columbian → 'smithsonian' with `unit_code:NMAI`\n" +
+      "- Māori and Pacific → 'tepapa'\n" +
+      "- Latin American art, and anywhere else with no museum API → 'wikidata'\n\n" +
+      "Source-specific quirks worth knowing:\n" +
+      "- 'smithsonian' accepts field filters in the query, so `unit_code:NMAfA` or `unit_code:FSG` (Asian art) narrows 21 museums to one. Write it as a plain AND term — 'Nasca AND unit_code:NMAI' — and do not parenthesise it, which makes the filter silently drop. Note that `unit_code:NMAI` returns metadata but essentially never images, so use it to find and read about Indigenous American works, not to display them.\n" +
+      "- 'japansearch' catalogs in Japanese and has no English titles — query it in Japanese ('北斎', '浮世絵') for good recall, and expect titles to come back in Japanese with a `language` field marking them; that is correct output, not a failure.\n" +
+      "- 'tepapa' images are mostly 'All Rights Reserved' under Te Papa's cultural protocols for taonga Māori. They can still be fetched and viewed, but check `license` from get_artwork before suggesting a work can be reused.",
     inputSchema: {
       query: z
         .string()
@@ -69,7 +80,7 @@ server.registerTool(
         .or(z.literal("all"))
         .optional()
         .describe(
-          "A specific museum source, or 'all' (default) to search every available source. Note that 'rijksmuseum' has no free-text search and is the slowest source, so an all-source search costs a few seconds.",
+          "A specific museum source, or 'all' (default) to search every available source. An all-source search costs several seconds — 'rijksmuseum' has no free-text search, and 'wikidata' runs a SPARQL query — so name a source when you know which one holds the work.",
         ),
       limit: z
         .number()
@@ -125,7 +136,8 @@ server.registerTool(
   {
     title: "Get artwork details",
     description:
-      "Fetch full catalog details for a single artwork by its source and id (as returned by search_artworks) — medium, dimensions, department, culture, credit line, and public-domain status where the museum publishes them. Use this to confirm attribution or rights before relying on a work, since search results carry only a summary.",
+      "Fetch full catalog details for a single artwork by its source and id (as returned by search_artworks) — medium, dimensions, department, culture, where it was made, credit line, and rights where the museum publishes them. Use this to confirm attribution or rights before relying on a work, since search results carry only a summary.\n\n" +
+      "Rights come back in two fields: `isPublicDomain` is a boolean and is only set when the source states it outright, while `license` carries the source's own wording (e.g. 'CC0', 'CC BY-NC-SA', 'In copyright'). Prefer `license` when advising on reuse — an absent `isPublicDomain` means unknown, not free.",
     inputSchema: {
       source: sourceEnum.describe("The museum source the artwork belongs to."),
       id: z.string().min(1).describe("The provider-native artwork id from search results."),

@@ -1,6 +1,6 @@
 {
   "name": "art-mcp",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "MCP server for searching museum collections and viewing artwork images and metadata.",
   "type": "module",
   "bin": {
@@ -37,7 +37,12 @@
     "model-context-protocol",
     "museum",
     "art",
-    "paintings"
+    "paintings",
+    "art-history",
+    "open-access",
+    "iiif",
+    "cultural-heritage",
+    "digital-archives"
   ],
   "license": "MIT",
   "dependencies": {

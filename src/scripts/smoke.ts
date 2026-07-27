@@ -20,6 +20,12 @@ const QUERIES: Record<Source, string> = {
   cleveland: "Monet",
   harvard: "Van Gogh",
   rijksmuseum: "Rembrandt",
+  vam: "Hokusai",
+  smithsonian: "Bembe mask",
+  // Japan Search catalogs in Japanese; an English query tests nothing useful.
+  japansearch: "北斎",
+  tepapa: "korowai",
+  wikidata: "Tarsila do Amaral",
 };
 
 /**

@@ -35,9 +35,13 @@ jobs:
         id: smoke
         continue-on-error: true
         env:
-          # Optional: set this repo secret to include Harvard in the run.
-          # Without it Harvard reports as skipped rather than failing.
+          # Optional: set these repo secrets to include the key-gated sources in
+          # the run. Without one, that source reports as skipped, not failed.
           HARVARD_API_KEY: ${{ secrets.HARVARD_API_KEY }}
+          # Must be a real api.data.gov key — DEMO_KEY allows only 10 requests
+          # per hour and would make the nightly run flap.
+          SMITHSONIAN_API_KEY: ${{ secrets.SMITHSONIAN_API_KEY }}
+          TEPAPA_API_KEY: ${{ secrets.TEPAPA_API_KEY }}
         run: npm run smoke
 
       - name: Report failure

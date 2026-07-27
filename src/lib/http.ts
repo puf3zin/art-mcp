@@ -1,7 +1,7 @@
 const DEFAULT_TIMEOUT_MS = 15_000;
 
 const USER_AGENT =
-  "art-mcp/0.1 (+https://github.com/puf3zin/art-mcp; MCP server)";
+  "art-mcp/0.2 (+https://github.com/puf3zin/art-mcp; MCP server)";
 
 export class HttpError extends Error {
   constructor(
@@ -53,12 +53,47 @@ async function request(
   }
 }
 
+export interface JsonOptions {
+  timeoutMs?: number;
+  /** Extra request headers, e.g. an `x-api-key` or a non-default `Accept`. */
+  headers?: Record<string, string>;
+}
+
 /** Fetch a URL and parse the body as JSON. */
 export async function getJson<T = unknown>(
   url: string,
-  timeoutMs?: number,
+  options?: number | JsonOptions,
 ): Promise<T> {
-  const res = await request(url, { headers: { Accept: "application/json" } }, timeoutMs);
+  // The second argument used to be a bare timeout; keep that call shape working.
+  const { timeoutMs, headers }: JsonOptions =
+    typeof options === "number" ? { timeoutMs: options } : (options ?? {});
+  const res = await request(
+    url,
+    { headers: { Accept: "application/json", ...headers } },
+    timeoutMs,
+  );
+  return (await res.json()) as T;
+}
+
+/** POST a JSON body and parse the response as JSON. */
+export async function postJson<T = unknown>(
+  url: string,
+  body: unknown,
+  options: JsonOptions = {},
+): Promise<T> {
+  const res = await request(
+    url,
+    {
+      method: "POST",
+      body: JSON.stringify(body),
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+        ...options.headers,
+      },
+    },
+    options.timeoutMs,
+  );
   return (await res.json()) as T;
 }
 

@@ -2,8 +2,13 @@ import type { Provider, Source } from "../types.js";
 import { articProvider } from "./artic.js";
 import { clevelandProvider } from "./cleveland.js";
 import { harvardProvider } from "./harvard.js";
+import { japanSearchProvider } from "./japansearch.js";
 import { metProvider } from "./met.js";
 import { rijksmuseumProvider } from "./rijksmuseum.js";
+import { smithsonianProvider } from "./smithsonian.js";
+import { tepapaProvider } from "./tepapa.js";
+import { vamProvider } from "./vam.js";
+import { wikidataProvider } from "./wikidata.js";
 
 /** All known providers, in default fan-out order. */
 export const providers: Provider[] = [
@@ -12,6 +17,11 @@ export const providers: Provider[] = [
   clevelandProvider,
   harvardProvider,
   rijksmuseumProvider,
+  vamProvider,
+  smithsonianProvider,
+  japanSearchProvider,
+  tepapaProvider,
+  wikidataProvider,
 ];
 
 const byId = new Map<Source, Provider>(providers.map((p) => [p.id, p]));
