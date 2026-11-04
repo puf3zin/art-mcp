@@ -2,6 +2,7 @@ import { getJson } from "../lib/http.js";
 import type { Artwork, ArtworkDetail, Provider } from "../types.js";
 
 const BASE = "https://collectionapi.metmuseum.org/public/collection/v1";
+const BASE_V11 = "https://collectionapi.metmuseum.org/public/collection/v1.1";
 
 interface MetSearchResponse {
   total: number;
@@ -56,7 +57,8 @@ export const metProvider: Provider = {
   },
 
   async search(query, limit) {
-    const url = `${BASE}/search?hasImages=true&q=${encodeURIComponent(query)}`;
+    // /v1/search was retired on 2026-10-01; v1.1 is Elastic-backed and paginated.
+    const url = `${BASE_V11}/search?hasImages=true&q=${encodeURIComponent(query)}&limit=${limit}`;
     const res = await getJson<MetSearchResponse>(url);
     const ids = (res.objectIDs ?? []).slice(0, limit);
     // The search endpoint returns only IDs; hydrate each in parallel.
