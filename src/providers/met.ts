@@ -33,7 +33,10 @@ function toDetail(obj: MetObject): ArtworkDetail {
     artist: obj.artistDisplayName || undefined,
     date: obj.objectDate || undefined,
     thumbnailUrl: obj.primaryImageSmall || undefined,
-    imageUrl: obj.primaryImage || undefined,
+    // primaryImage is the original upload, often 8MB+; primaryImageSmall is a
+    // web-sized rendition (~200KB) that is plenty for viewing.
+    imageUrl: obj.primaryImageSmall || obj.primaryImage || undefined,
+    fullImageUrl: obj.primaryImage || undefined,
     museumUrl: obj.objectURL || undefined,
     medium: obj.medium || undefined,
     dimensions: obj.dimensions || undefined,
@@ -67,7 +70,7 @@ export const metProvider: Provider = {
     for (const r of objects) {
       if (r.status === "fulfilled") {
         const d = toDetail(r.value);
-        const { medium, dimensions, department, culture, creditLine, isPublicDomain, ...compact } =
+        const { fullImageUrl, medium, dimensions, department, culture, creditLine, isPublicDomain, ...compact } =
           d;
         results.push(compact);
       }

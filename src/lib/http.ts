@@ -16,11 +16,18 @@ export class HttpError extends Error {
   }
 }
 
-async function request(
+/**
+ * Fetch with a timeout that covers the whole exchange, body included. `read`
+ * consumes the response while the timer is still running; the timer used to
+ * be cleared as soon as headers arrived, so a stalled body hung forever.
+ */
+async function request<T>(
   url: string,
-  init: RequestInit = {},
-  timeoutMs = DEFAULT_TIMEOUT_MS,
-): Promise<Response> {
+  init: RequestInit,
+  timeoutMs: number | undefined,
+  read: (res: Response) => Promise<T>,
+): Promise<T> {
+  timeoutMs ??= DEFAULT_TIMEOUT_MS;
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
@@ -39,7 +46,7 @@ async function request(
         url,
       );
     }
-    return res;
+    return await read(res);
   } catch (err) {
     if (err instanceof HttpError) throw err;
     if (err instanceof Error && err.name === "AbortError") {
@@ -69,12 +76,12 @@ export async function getJson<T = unknown>(
   // The second argument used to be a bare timeout; keep that call shape working.
   const { timeoutMs, headers }: JsonOptions =
     typeof options === "number" ? { timeoutMs: options } : (options ?? {});
-  const res = await request(
+  return request(
     url,
     { headers: { Accept: "application/json", ...headers } },
     timeoutMs,
+    async (res) => (await res.json()) as T,
   );
-  return (await res.json()) as T;
 }
 
 /** POST a JSON body and parse the response as JSON. */
@@ -83,7 +90,7 @@ export async function postJson<T = unknown>(
   body: unknown,
   options: JsonOptions = {},
 ): Promise<T> {
-  const res = await request(
+  return request(
     url,
     {
       method: "POST",
@@ -95,8 +102,8 @@ export async function postJson<T = unknown>(
       },
     },
     options.timeoutMs,
+    async (res) => (await res.json()) as T,
   );
-  return (await res.json()) as T;
 }
 
 /** Fetch a URL and return the raw bytes plus content type. */
@@ -104,7 +111,8 @@ export async function getBytes(
   url: string,
   timeoutMs?: number,
 ): Promise<{ bytes: Uint8Array; contentType: string | null }> {
-  const res = await request(url, {}, timeoutMs);
-  const buf = new Uint8Array(await res.arrayBuffer());
-  return { bytes: buf, contentType: res.headers.get("content-type") };
+  return request(url, {}, timeoutMs, async (res) => ({
+    bytes: new Uint8Array(await res.arrayBuffer()),
+    contentType: res.headers.get("content-type"),
+  }));
 }
