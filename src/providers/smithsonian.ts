@@ -47,6 +47,7 @@ interface EdanRow {
       record_link?: string;
       guid?: string;
       unit_code?: string;
+      record_ID?: string;
       online_media?: { media?: EdanMedia[] };
     };
   };
@@ -138,6 +139,23 @@ function imagesOf(row: EdanRow) {
 
 function museumUrlOf(row: EdanRow): string | undefined {
   const dnr = row.content?.descriptiveNonRepeating;
+  // Cooper Hewitt's record_link points at its retired collection site, which
+  // now redirects to a generic page. The si.edu object page works for these
+  // records: the record ID after the colon does the lookup, and the slug
+  // before it is cosmetic.
+  if (
+    dnr?.unit_code === "CHNDM" ||
+    dnr?.record_link?.includes("collection.cooperhewitt.org")
+  ) {
+    const recordId = dnr?.record_ID ?? row.id.replace(/^edanmdm-/, "");
+    const slug =
+      (row.title ?? "")
+        .toLowerCase()
+        .normalize("NFKD")
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-+|-+$/g, "") || "object";
+    return `https://www.si.edu/object/${slug}:${encodeURIComponent(recordId)}`;
+  }
   // record_link is the museum's own object page; guid is an ARK that resolves
   // to the same place and is present far more often.
   return dnr?.record_link || dnr?.guid || undefined;
