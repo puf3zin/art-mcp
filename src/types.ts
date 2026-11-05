@@ -40,6 +40,11 @@ export interface Artwork {
 
 /** Full record returned when fetching a single artwork. */
 export interface ArtworkDetail extends Artwork {
+  /**
+   * Original-resolution image, when the source offers one and `imageUrl` is a
+   * smaller rendition. Can be many MB, so get_artwork_image never downloads it.
+   */
+  fullImageUrl?: string;
   medium?: string;
   dimensions?: string;
   department?: string;
