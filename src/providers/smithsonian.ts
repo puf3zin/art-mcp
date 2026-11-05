@@ -1,4 +1,5 @@
 import { getJson } from "../lib/http.js";
+import { FULL_WIDTH } from "../lib/iiif.js";
 import type { Artwork, ArtworkDetail, Provider } from "../types.js";
 
 // Smithsonian Open Access spans 21 museums behind one index, which is why it is
@@ -132,9 +133,28 @@ function imagesOf(row: EdanRow) {
     /high[- ]?resolution/i.test(r.label ?? ""),
   )?.url;
   return {
-    imageUrl: highRes ?? media.content ?? media.thumbnail,
+    imageUrl: boundedIds(media.content) ?? media.thumbnail ?? highRes,
     thumbnailUrl: media.thumbnail ?? media.content,
   };
+}
+
+/** The original-resolution image, which can run to 10MB+. */
+function fullImageOf(row: EdanRow): string | undefined {
+  const media = firstMedia(row);
+  return media?.resources?.find((r) => /high[- ]?resolution/i.test(r.label ?? ""))
+    ?.url;
+}
+
+/**
+ * Smithsonian image-delivery URLs accept `max=<px>`; without it the server
+ * returns the full original. Other hosts are returned unchanged.
+ */
+function boundedIds(url: string | undefined): string | undefined {
+  if (!url) return undefined;
+  if (!url.includes("ids.si.edu/ids/deliveryService") || /[?&]max=/.test(url)) {
+    return url;
+  }
+  return `${url}${url.includes("?") ? "&" : "?"}max=${FULL_WIDTH}`;
 }
 
 function museumUrlOf(row: EdanRow): string | undefined {
@@ -178,6 +198,7 @@ function toDetail(row: EdanRow): ArtworkDetail {
   const isCC0 = access?.toUpperCase() === "CC0";
   return {
     ...toCompact(row),
+    fullImageUrl: fullImageOf(row),
     // Prefer a stated medium; object_type ("Masks") is a shape, not a material,
     // so it is only a fallback.
     medium:

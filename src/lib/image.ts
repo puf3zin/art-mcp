@@ -20,7 +20,7 @@ function mimeFromUrl(url: string): string {
  * content block.
  */
 export async function fetchImage(url: string): Promise<FetchedImage> {
-  const { bytes, contentType } = await getBytes(url);
+  const { bytes, contentType } = await getBytes(url, 30_000);
   const mimeType =
     contentType && contentType.startsWith("image/")
       ? contentType.split(";")[0].trim()
