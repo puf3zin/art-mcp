@@ -1,4 +1,5 @@
 import { getJson } from "../lib/http.js";
+import { FULL_WIDTH } from "../lib/iiif.js";
 import type { Artwork, ArtworkDetail, Provider } from "../types.js";
 
 // Smithsonian Open Access spans 21 museums behind one index, which is why it is
@@ -47,6 +48,7 @@ interface EdanRow {
       record_link?: string;
       guid?: string;
       unit_code?: string;
+      record_ID?: string;
       online_media?: { media?: EdanMedia[] };
     };
   };
@@ -131,13 +133,49 @@ function imagesOf(row: EdanRow) {
     /high[- ]?resolution/i.test(r.label ?? ""),
   )?.url;
   return {
-    imageUrl: highRes ?? media.content ?? media.thumbnail,
+    imageUrl: boundedIds(media.content) ?? media.thumbnail ?? highRes,
     thumbnailUrl: media.thumbnail ?? media.content,
   };
 }
 
+/** The original-resolution image, which can run to 10MB+. */
+function fullImageOf(row: EdanRow): string | undefined {
+  const media = firstMedia(row);
+  return media?.resources?.find((r) => /high[- ]?resolution/i.test(r.label ?? ""))
+    ?.url;
+}
+
+/**
+ * Smithsonian image-delivery URLs accept `max=<px>`; without it the server
+ * returns the full original. Other hosts are returned unchanged.
+ */
+function boundedIds(url: string | undefined): string | undefined {
+  if (!url) return undefined;
+  if (!url.includes("ids.si.edu/ids/deliveryService") || /[?&]max=/.test(url)) {
+    return url;
+  }
+  return `${url}${url.includes("?") ? "&" : "?"}max=${FULL_WIDTH}`;
+}
+
 function museumUrlOf(row: EdanRow): string | undefined {
   const dnr = row.content?.descriptiveNonRepeating;
+  // Cooper Hewitt's record_link points at its retired collection site, which
+  // now redirects to a generic page. The si.edu object page works for these
+  // records: the record ID after the colon does the lookup, and the slug
+  // before it is cosmetic.
+  if (
+    dnr?.unit_code === "CHNDM" ||
+    dnr?.record_link?.includes("collection.cooperhewitt.org")
+  ) {
+    const recordId = dnr?.record_ID ?? row.id.replace(/^edanmdm-/, "");
+    const slug =
+      (row.title ?? "")
+        .toLowerCase()
+        .normalize("NFKD")
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-+|-+$/g, "") || "object";
+    return `https://www.si.edu/object/${slug}:${encodeURIComponent(recordId)}`;
+  }
   // record_link is the museum's own object page; guid is an ARK that resolves
   // to the same place and is present far more often.
   return dnr?.record_link || dnr?.guid || undefined;
@@ -160,6 +198,7 @@ function toDetail(row: EdanRow): ArtworkDetail {
   const isCC0 = access?.toUpperCase() === "CC0";
   return {
     ...toCompact(row),
+    fullImageUrl: fullImageOf(row),
     // Prefer a stated medium; object_type ("Masks") is a shape, not a material,
     // so it is only a fallback.
     medium:

@@ -33,12 +33,7 @@ const QUERIES: Record<Source, string> = {
  * fail the run — a nightly alert that is always red teaches everyone to ignore
  * it. They are still worth running: if one starts passing, we want to know.
  */
-const KNOWN_BROKEN: Partial<Record<Source, { step: Step; reason: string }>> = {
-  artic: {
-    step: "image",
-    reason: "images sit behind a Cloudflare bot challenge and 403 regardless of User-Agent",
-  },
-};
+const KNOWN_BROKEN: Partial<Record<Source, { step: Step; reason: string }>> = {};
 
 type Step = "search" | "detail" | "image";
 type Status = "pass" | "fail" | "skip" | "known-broken";
