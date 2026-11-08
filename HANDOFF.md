@@ -45,7 +45,8 @@ which assumes a record ID format that has not been confirmed.
 
 ## Known issues
 
-- Art Institute of Chicago images return 403 (bot challenge).
+- Art Institute of Chicago: fixed by sending its documented `AIC-User-Agent`
+  header (`src/lib/http.ts`). Without it Cloudflare challenges the API and images.
 - Smithsonian lookups by accession number (`chndm_1901-39-497`) return not
   found; `edanmdm:chndm_1901-39-497` works. Results show the `ld1-...` ID.
 - `npm audit` reports vulnerabilities; not yet examined

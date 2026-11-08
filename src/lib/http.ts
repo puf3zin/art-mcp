@@ -5,6 +5,24 @@ const DEFAULT_TIMEOUT_MS = 15_000;
 // Sent on every museum request, so it should say which version is calling.
 const USER_AGENT = `art-mcp/${VERSION} (+https://github.com/puf3zin/art-mcp; MCP server)`;
 
+/**
+ * The Art Institute of Chicago asks API clients to identify themselves in an
+ * `AIC-User-Agent` header (https://api.artic.edu/docs/#user-agent). Without it,
+ * Cloudflare serves a bot challenge (403, `cf-mitigated: challenge`) on both
+ * the API and the IIIF image host, which share the artic.edu domain.
+ */
+function hostHeaders(url: string): Record<string, string> {
+  try {
+    const host = new URL(url).hostname;
+    if (host === "artic.edu" || host.endsWith(".artic.edu")) {
+      return { "AIC-User-Agent": USER_AGENT };
+    }
+  } catch {
+    // An unparseable URL fails in fetch with a clearer message.
+  }
+  return {};
+}
+
 export class HttpError extends Error {
   constructor(
     message: string,
@@ -36,6 +54,7 @@ async function request<T>(
       signal: controller.signal,
       headers: {
         "User-Agent": USER_AGENT,
+        ...hostHeaders(url),
         ...(init.headers ?? {}),
       },
     });

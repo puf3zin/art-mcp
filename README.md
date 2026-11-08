@@ -98,11 +98,6 @@ parameter**, so `search_artworks` fans the keyword across `title`, `creator`, an
 result costs a follow-up lookup (plus two more to resolve its image) — expect Rijksmuseum
 to be the slowest source in an all-museum search.
 
-### A note on Art Institute of Chicago
-
-Search and metadata work, but the IIIF image host sits behind a Cloudflare bot
-challenge, so `get_artwork_image` will usually fail for `artic` with a 403.
-
 ## Tools
 
 - **`list_sources`** — which museums are queryable right now.
@@ -177,7 +172,7 @@ used to work stops working. Run it yourself with:
 npm run smoke
 ```
 
-Known-broken checks (currently the Art Institute's Cloudflare-blocked images) are reported
+Known-broken checks (none at present) are reported
 but don't fail the run, so a red badge always means something new actually broke.
 
 ## Development
